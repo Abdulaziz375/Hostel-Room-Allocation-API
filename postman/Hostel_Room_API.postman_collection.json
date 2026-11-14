@@ -1,0 +1,562 @@
+{
+  "info": {
+    "name": "Hostel Room Allocation API - CRUD Tests",
+    "description": "Postman tests for the Hostel Room Allocation REST API. Run the whole collection with the Collection Runner.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "roomId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "TC-01 Create a valid room (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"A-101\",\n  \"block\": \"A\",\n  \"capacity\": 4,\n  \"occupants\": 2,\n  \"monthly_fee\": 6000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-01: POST valid room returns 201\", function () { pm.response.to.have.status(201); });",
+              "const r = pm.response.json();",
+              "pm.test(\"TC-01: response has the sent data, an id and 2 free beds\", function () { pm.expect(r.room_no).to.eql(\"A-101\"); pm.expect(r.id).to.be.a(\"number\"); pm.expect(r.available_beds).to.eql(2); });",
+              "pm.collectionVariables.set(\"roomId\", r.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-02 Get all rooms (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-02: GET all rooms returns 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"TC-02: body is an array that contains the created room\", function () { const list = pm.response.json(); pm.expect(list).to.be.an(\"array\"); pm.expect(list.map(x => x.id)).to.include(Number(pm.collectionVariables.get(\"roomId\"))); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-03 Get one room by ID (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/{{roomId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "{{roomId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-03: GET existing room returns 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"TC-03: returned room has the requested id\", function () { pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get(\"roomId\"))); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-04 Update a room (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/{{roomId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "{{roomId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"A-101\",\n  \"block\": \"A\",\n  \"capacity\": 4,\n  \"occupants\": 3,\n  \"monthly_fee\": 6500\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-04: PUT existing room returns 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"TC-04: occupants 3 and fee 6500 saved\", function () { const r = pm.response.json(); pm.expect(r.occupants).to.eql(3); pm.expect(r.monthly_fee).to.eql(6500); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-05 Verify the update was saved (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/{{roomId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "{{roomId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-05: GET after update returns 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"TC-05: database holds occupants = 3 and 1 free bed\", function () { const r = pm.response.json(); pm.expect(r.occupants).to.eql(3); pm.expect(r.available_beds).to.eql(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-06 Get rooms with free beds (GET ?available=true)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms?available=true",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ],
+          "query": [
+            {
+              "key": "available",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-06: GET available rooms returns 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"TC-06: every room listed has a free bed and ours is included\", function () { const list = pm.response.json(); list.forEach(x => pm.expect(x.available_beds).to.be.above(0)); pm.expect(list.map(x => x.id)).to.include(Number(pm.collectionVariables.get(\"roomId\"))); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-07 Create with missing fields (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"B-202\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-07: POST with missing fields returns 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"TC-07: error names the missing fields\", function () { const d = pm.response.json().details; pm.expect(d).to.have.property(\"block\"); pm.expect(d).to.have.property(\"capacity\"); pm.expect(d).to.have.property(\"monthly_fee\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-08 Create with invalid data (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"B-202\",\n  \"block\": \"Z\",\n  \"capacity\": 3,\n  \"occupants\": 5,\n  \"monthly_fee\": 6000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-08: POST with invalid block and too many occupants returns 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"TC-08: errors reported for block and occupants\", function () { const d = pm.response.json().details; pm.expect(d).to.have.property(\"block\"); pm.expect(d).to.have.property(\"occupants\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-09 Create with duplicate room number (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"A-101\",\n  \"block\": \"A\",\n  \"capacity\": 4,\n  \"occupants\": 2,\n  \"monthly_fee\": 6000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-09: POST duplicate room number returns 409\", function () { pm.response.to.have.status(409); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-10 Get a nonexistent ID (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/9999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "9999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-10: GET nonexistent id returns 404\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"TC-10: error message is returned\", function () { pm.expect(pm.response.json()).to.have.property(\"error\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-11 Update a nonexistent ID (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/9999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "9999"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"room_no\": \"A-101\",\n  \"block\": \"A\",\n  \"capacity\": 4,\n  \"occupants\": 2,\n  \"monthly_fee\": 6000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-11: PUT nonexistent id returns 404\", function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-12 Send malformed JSON (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"room_no\": \"B-202\"",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-12: POST malformed JSON returns 400\", function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-13 Delete an existing room (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/{{roomId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "{{roomId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-13: DELETE existing room returns 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-14 Get the deleted room (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/{{roomId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "{{roomId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-14: GET deleted room returns 404\", function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "TC-15 Delete a nonexistent ID (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/rooms/9999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rooms",
+            "9999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"TC-15: DELETE nonexistent id returns 404\", function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
